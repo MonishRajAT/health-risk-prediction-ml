@@ -2,6 +2,6 @@ streamlit
 pandas
 numpy
 scikit-learn
-matplotlib
-plotly
 joblib
+matplotlib
+altair==4.2.2
