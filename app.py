@@ -1,7 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import plotly.express as px
 import plotly.graph_objects as go
 
 from src.prediction import (
@@ -15,7 +13,10 @@ from src.utils import (
     risk_color
 )
 
+# ==================================================
 # PAGE CONFIG
+# ==================================================
+
 st.set_page_config(
     page_title="HealthGuard AI",
     page_icon="🏥",
@@ -23,398 +24,562 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# ==================================================
 # CUSTOM CSS
+# ==================================================
+
 st.markdown("""
 <style>
 
-/* Main Background */
+/* Main App */
+
 .stApp{
-    background: linear-gradient(
-        135deg,
-        #0f172a 0%,
-        #1e293b 50%,
-        #0f172a 100%
+    background:
+    linear-gradient(
+    135deg,
+    #0f172a,
+    #16213e,
+    #0f172a
     );
 }
 
-/* Remove default padding */
+/* Page Width */
+
 .block-container{
+    max-width:1400px;
     padding-top:2rem;
     padding-bottom:2rem;
-    max-width:1400px;
-}
-
-/* Main Title */
-.main-title{
-    text-align:center;
-    font-size:3.5rem;
-    font-weight:700;
-    color:white;
-    margin-bottom:0;
-}
-
-.subtitle{
-    text-align:center;
-    color:#cbd5e1;
-    font-size:1.2rem;
-    margin-bottom:2rem;
-}
-
-/* Glass Card */
-.glass-card{
-    background: rgba(255,255,255,0.08);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.15);
-
-    border-radius:20px;
-    padding:25px;
-    margin-bottom:20px;
-
-    transition:0.3s;
-}
-
-.glass-card:hover{
-    transform:translateY(-5px);
-}
-
-/* KPI Cards */
-.metric-card{
-    background: rgba(255,255,255,0.08);
-    backdrop-filter: blur(12px);
-    border-radius:18px;
-    padding:20px;
-    text-align:center;
-    border:1px solid rgba(255,255,255,0.12);
-}
-
-.metric-number{
-    color:#38bdf8;
-    font-size:2rem;
-    font-weight:bold;
-}
-
-.metric-label{
-    color:white;
-    font-size:1rem;
-}
-
-/* Disease Cards */
-.disease-card{
-    background: rgba(255,255,255,0.08);
-    border-radius:20px;
-    padding:25px;
-    border:1px solid rgba(255,255,255,0.12);
-    text-align:center;
-}
-
-.disease-title{
-    color:white;
-    font-size:1.5rem;
-    font-weight:600;
-}
-
-.disease-text{
-    color:#cbd5e1;
-}
-
-/* Result Card */
-.result-card{
-    border-radius:20px;
-    padding:25px;
-    text-align:center;
-    color:white;
-    font-weight:bold;
-    font-size:1.2rem;
 }
 
 /* Sidebar */
+
 section[data-testid="stSidebar"]{
-    background:#111827;
+    background:#1e2433;
+}
+
+/* Sidebar Buttons */
+
+section[data-testid="stSidebar"] button{
+
+    height:65px !important;
+
+    border:none !important;
+
+    border-radius:16px !important;
+
+    margin-bottom:12px !important;
+
+    color:white !important;
+
+    font-size:16px !important;
+
+    font-weight:600 !important;
+
+    background:
+    linear-gradient(
+    90deg,
+    #6d28d9,
+    #3b82f6,
+    #22c55e
+    ) !important;
+}
+
+section[data-testid="stSidebar"] button:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:
+    0px 6px 20px rgba(0,0,0,0.35);
+}
+
+/* Glass Card */
+
+.glass-card{
+
+    background:
+    rgba(255,255,255,0.08);
+
+    backdrop-filter:blur(12px);
+
+    border-radius:20px;
+
+    padding:25px;
+
+    border:
+    1px solid rgba(255,255,255,0.12);
+
+    margin-bottom:20px;
+}
+
+/* Metric Cards */
+
+.metric-card{
+
+    background:
+    rgba(255,255,255,0.08);
+
+    border-radius:20px;
+
+    padding:20px;
+
+    text-align:center;
+
+    border:
+    1px solid rgba(255,255,255,0.12);
+}
+
+.metric-number{
+
+    font-size:3rem;
+
+    text-align:center;
+}
+
+.metric-label{
+
+    color:white;
+
+    font-size:1rem;
+
+    font-weight:600;
+}
+
+/* Disease Cards */
+
+.disease-card{
+
+    background:
+    linear-gradient(
+    135deg,
+    rgba(109,40,217,0.15),
+    rgba(59,130,246,0.15),
+    rgba(34,197,94,0.15)
+    );
+
+    border-radius:20px;
+
+    padding:25px;
+
+    border:
+    1px solid rgba(255,255,255,0.1);
+
+    min-height:250px;
+}
+
+.disease-card:hover{
+
+    transform:translateY(-5px);
 }
 
 /* Headers */
+
 h1,h2,h3,h4{
+
     color:white !important;
 }
 
 p,li{
-    color:#e2e8f0;
+
+    color:#cbd5e1;
 }
 
-/* Input labels */
+/* Inputs */
+
 label{
+
     color:white !important;
 }
 
 /* Buttons */
-.stButton>button{
+
+.stButton > button{
+
     width:100%;
+
     border-radius:12px;
+
     height:50px;
-    font-size:18px;
+
+    font-size:16px;
+
     font-weight:600;
-
-    background:#0ea5e9;
-    color:white;
-
-    border:none;
 }
 
-.stButton>button:hover{
-    background:#0284c7;
+/* Metrics */
+
+[data-testid="metric-container"]{
+
+    background:
+    rgba(255,255,255,0.08);
+
+    border-radius:15px;
+
+    padding:15px;
+
+    border:
+    1px solid rgba(255,255,255,0.1);
+}
+            
+/* Progress Bar */
+            
+.stProgress > div > div > div > div{
+    background:#38bdf8;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-# SIDEBAR
-st.sidebar.markdown("# 🏥 HealthGuard AI")
+# ==================================================
+# SIDEBAR NAVIGATION
+# ==================================================
 
-page = st.sidebar.radio(
-    "Navigation",
-    [
-        "🏠 Dashboard",
-        "🩸 Diabetes",
-        "❤️ Heart Disease",
-        "🫀 Liver Disease",
-        "ℹ️ About"
-    ]
+if "page" not in st.session_state:
+    st.session_state.page = "home"
+
+st.sidebar.image(
+    "logo.png",
+    use_container_width=True
 )
 
 st.sidebar.markdown("---")
 
-st.sidebar.info(
+# HOME
+if st.sidebar.button(
+    "🏠 HOME",
+    use_container_width=True
+):
+    st.session_state.page = "home"
+
+# DIABETES
+
+if st.sidebar.button(
+    "🩸 DIABETES",
+    use_container_width=True
+):
+    st.session_state.page = "diabetes"
+
+# HEART
+
+if st.sidebar.button(
+    "❤️ HEART DISEASE",
+    use_container_width=True
+):
+    st.session_state.page = "heart"
+
+# LIVER
+
+if st.sidebar.button(
+    "🫀 LIVER DISEASE",
+    use_container_width=True
+):
+    st.session_state.page = "liver"
+
+# ABOUT
+
+if st.sidebar.button(
+    "ℹ️ ABOUT PROJECT",
+    use_container_width=True
+):
+    st.session_state.page = "about"
+
+st.sidebar.markdown("---")
+
+st.sidebar.markdown(
     """
-    AI Powered Health Risk Assessment
+    <div style="
+    text-align:center;
+    color:#94a3b8;
+    font-size:13px;
+    ">
 
-    ✔ Diabetes Prediction
+    Version 1.0
 
-    ✔ Heart Disease Prediction
+    <br><br>
 
-    ✔ Liver Disease Prediction
+    Machine Learning Powered
 
-    Built using Machine Learning
-    """
-)
-
-
-# DASHBOARD PAGE
-if page == "🏠 Dashboard":
-
-    # Hero Section
-
-    st.markdown("""
-    <div style='text-align:center;padding:30px;'>
-
-    <h1 class='main-title'>
-    🏥 HealthGuard AI
-    </h1>
-
-    <p class='subtitle'>
-    Intelligent Multi-Disease Risk Assessment Platform
     <br>
-    Powered by Machine Learning
-    </p>
+
+    Healthcare Decision Support
 
     </div>
-    """, unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True
+)
 
-    st.markdown("")
+page = st.session_state.page
 
-    # KPI CARDS
+# ==================================================
+# HOME PAGE
+# ==================================================
+
+if page == "home":
+
+    hero_left, hero_right = st.columns([1.5, 1])
+
+    with hero_left:
+
+        st.markdown(
+            """
+            # 🏥 HealthGuard AI
+
+            ### Intelligent Multi-Disease Risk Assessment Platform
+
+            Predict the risk of Diabetes, Heart Disease and Liver Disease
+            using Machine Learning powered healthcare analytics.
+
+            Get instant probability scores, risk categorization
+            and personalized health recommendations.
+            """
+        )
+
+    with hero_right:
+
+        st.info(
+            """
+            ### AI Healthcare Platform
+
+            ✔ Diabetes Prediction
+
+            ✔ Heart Disease Prediction
+
+            ✔ Liver Disease Prediction
+
+            ✔ Instant Risk Analysis
+
+            ✔ Personalized Recommendations
+            """
+        )
+
+    st.markdown("---")
+
+    # ==================================================
+    # KPI SECTION
+    # ==================================================
+
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        st.markdown("""
-        <div class='metric-card'>
-            <div class='metric-number'>3</div>
-            <div class='metric-label'>Diseases</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class='metric-card'>
+                <div class='metric-number'>🩺</div>
+                <div class='metric-label'>3 Diseases</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     with col2:
-        st.markdown("""
-        <div class='metric-card'>
-            <div class='metric-number'>3</div>
-            <div class='metric-label'>ML Models</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class='metric-card'>
+                <div class='metric-number'>🤖</div>
+                <div class='metric-label'>3 ML Models</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     with col3:
-        st.markdown("""
-        <div class='metric-card'>
-            <div class='metric-number'>95%+</div>
-            <div class='metric-label'>Accuracy</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class='metric-card'>
+                <div class='metric-number'>📈</div>
+                <div class='metric-label'>95%+ Accuracy</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     with col4:
-        st.markdown("""
-        <div class='metric-card'>
-            <div class='metric-number'>30+</div>
-            <div class='metric-label'>Health Features</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class='metric-card'>
+                <div class='metric-number'>⚡</div>
+                <div class='metric-label'>Real-Time</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # ABOUT SECTION
-    st.markdown("""
-    <div class='glass-card'>
+    # ==================================================
+    # DISEASE MODULES
+    # ==================================================
 
-    <h2>🚀 About HealthGuard AI</h2>
+    st.subheader("🩺 Disease Assessment Modules")
 
-    HealthGuard AI is an intelligent healthcare decision-support platform
-    that predicts disease risks using Machine Learning models trained on
-    real-world medical datasets.
+    d1, d2, d3 = st.columns(3)
 
-    The platform currently supports:
+    with d1:
 
-    ✔ Diabetes Risk Prediction
+        st.markdown(
+            """
+            <div class='disease-card'>
 
-    ✔ Heart Disease Risk Prediction
+            <h2>Diabetes</h2>
 
-    ✔ Liver Disease Risk Prediction
+            Assess diabetes risk using:
 
-    Users can enter clinical parameters and instantly receive
-    a risk probability score along with health recommendations.
+            • Glucose
 
-    </div>
-    """, unsafe_allow_html=True)
+            • BMI
 
-    # DISEASE CARDS
-    st.markdown("## 🩺 Disease Assessment Modules")
+            • Insulin
 
-    col1, col2, col3 = st.columns(3)
+            • Blood Pressure
 
-    with col1:
-        st.markdown("""
-        <div class='disease-card'>
+            • Age
 
-        <div class='disease-title'>
-        🩸 Diabetes
-        </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-        <br>
+        if st.button(
+            "Open Diabetes Assessment",
+            key="home_diabetes"
+        ):
+            st.session_state.page = "diabetes"
+            st.rerun()
 
-        <div class='disease-text'>
-        Assess diabetes risk using glucose,
-        BMI, insulin levels and other
-        clinical indicators.
-        </div>
+    with d2:
 
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class='disease-card'>
 
-    with col2:
-        st.markdown("""
-        <div class='disease-card'>
+            <h2>Heart Disease</h2>
 
-        <div class='disease-title'>
-        ❤️ Heart Disease
-        </div>
+            Assess heart disease risk using:
 
-        <br>
+            • Cholesterol
 
-        <div class='disease-text'>
-        Evaluate cardiovascular risk
-        using patient health parameters
-        and cardiac indicators.
-        </div>
+            • ECG Results
 
-        </div>
-        """, unsafe_allow_html=True)
+            • Heart Rate
 
-    with col3:
-        st.markdown("""
-        <div class='disease-card'>
+            • Chest Pain Type
 
-        <div class='disease-title'>
-        🫀 Liver Disease
-        </div>
+            • Blood Pressure
 
-        <br>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-        <div class='disease-text'>
-        Predict liver disease risk
-        using biochemical and
-        diagnostic markers.
-        </div>
+        if st.button(
+            "Open Heart Assessment",
+            key="home_heart"
+        ):
+            st.session_state.page = "heart"
+            st.rerun()
 
-        </div>
-        """, unsafe_allow_html=True)
+    with d3:
+
+        st.markdown(
+            """
+            <div class='disease-card'>
+
+            <h2>Liver Disease</h2>
+
+            Assess liver disease risk using:
+
+            • Bilirubin
+
+            • SGOT
+
+            • SGPT
+
+            • Albumin
+
+            • Protein Levels
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        if st.button(
+            "Open Liver Assessment",
+            key="home_liver"
+        ):
+            st.session_state.page = "liver"
+            st.rerun()
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # FEATURES SECTION
-    st.markdown("""
-    <div class='glass-card'>
+    # ==================================================
+    # ABOUT PLATFORM
+    # ==================================================
 
-    <h2>✨ Key Features</h2>
+    left, right = st.columns(2)
 
-    ✅ Machine Learning Powered Predictions
+    with left:
 
-    ✅ Instant Risk Assessment
+        st.markdown(
+            """
+            <div class='glass-card'>
 
-    ✅ Multi-Disease Support
+            <h2>🚀 About HealthGuard AI</h2>
 
-    ✅ Interactive Dashboard
+            HealthGuard AI is a Machine Learning
+            powered healthcare platform that helps
+            users assess disease risks through
+            predictive analytics.
 
-    ✅ Healthcare Analytics
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-    ✅ User-Friendly Interface
+    with right:
 
-    ✅ Real-Time Prediction Results
+        st.markdown(
+            """
+            <div class='glass-card'>
 
-    </div>
-    """, unsafe_allow_html=True)
+            <h2>⚙️ How It Works</h2>
 
-    # WORKFLOW SECTION
-    st.markdown("""
-    <div class='glass-card'>
+            1. Select a disease module
 
-    <h2>⚙️ How It Works</h2>
+            2. Enter health parameters
 
-    1️⃣ Select a disease prediction module
+            3. Run AI prediction
 
-    2️⃣ Enter clinical health parameters
+            4. View risk score
 
-    3️⃣ Run AI-powered prediction
+            5. Get recommendations
 
-    4️⃣ Receive risk probability score
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-    5️⃣ View personalized recommendations
-
-    </div>
-    """, unsafe_allow_html=True)
-
-    # DISCLAIMER
     st.warning(
-        "⚠️ This platform is intended for educational and decision-support purposes only and should not replace professional medical advice."
+        "⚠️ This platform is intended for educational purposes only and should not replace professional medical advice."
     )
 
-
+# ==================================================
 # DIABETES PAGE
-elif page == "🩸 Diabetes":
+# ==================================================
 
-    st.markdown("""
-    <h1 style='text-align:center;'>
-    🩸 Diabetes Risk Assessment
-    </h1>
-    """, unsafe_allow_html=True)
+elif page == "diabetes":
 
-    st.markdown("""
-    <div class='glass-card'>
-    Predict diabetes risk using clinical and diagnostic parameters.
-    </div>
-    """, unsafe_allow_html=True)
+    st.title("🩸 Diabetes Risk Assessment")
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+        """
+        Assess diabetes risk using patient information
+        and clinical health parameters.
+        """
+    )
 
-    # INPUT SECTIONS
-    col1, col2 = st.columns(2)
+    left_col, right_col = st.columns([1, 1])
 
-    with col1:
+    with left_col:
 
         st.markdown("### 👤 Patient Information")
 
@@ -446,8 +611,6 @@ elif page == "🩸 Diabetes":
             value=0.5
         )
 
-    with col2:
-
         st.markdown("### 🧪 Clinical Parameters")
 
         glucose = st.number_input(
@@ -478,193 +641,184 @@ elif page == "🩸 Diabetes":
             value=80
         )
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # PREDICT BUTTON
-    if st.button(
-        "🔍 Analyze Diabetes Risk",
-        use_container_width=True
-    ):
-
-        pred, prob = predict_diabetes([
-            pregnancies,
-            glucose,
-            bp,
-            skin,
-            insulin,
-            bmi,
-            dpf,
-            age
-        ])
-
-        risk_percent = round(prob * 100, 2)
-
-        st.markdown("---")
-
-        # KPI RESULTS
-        r1, r2, r3 = st.columns(3)
-
-        with r1:
-            st.metric(
-                "Risk Score",
-                f"{risk_percent}%"
-            )
-
-        with r2:
-            st.metric(
-                "Prediction",
-                "Positive" if pred == 1 else "Negative"
-            )
-
-        with r3:
-            if prob < 0.3:
-                st.metric(
-                    "Risk Level",
-                    "Low"
-                )
-            elif prob < 0.6:
-                st.metric(
-                    "Risk Level",
-                    "Moderate"
-                )
-            else:
-                st.metric(
-                    "Risk Level",
-                    "High"
-                )
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        # PROGRESS BAR
-        st.markdown("### 📊 Risk Probability")
-
-        st.progress(float(prob))
-
-        st.write(f"Risk Probability: **{risk_percent}%**")
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        # RESULT CARD
-        if prob < 0.3:
-
-            st.success(
-                "🟢 Low Risk Detected"
-            )
-
-        elif prob < 0.6:
-
-            st.warning(
-                "🟡 Moderate Risk Detected"
-            )
-
-        else:
-
-            st.error(
-                "🔴 High Risk Detected"
-            )
-
-        st.info(
-            risk_message(prob)
-        )
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        # RECOMMENDATIONS
-        st.markdown("""
-        <div class='glass-card'>
-        <h3>💡 Health Recommendations</h3>
-        </div>
-        """, unsafe_allow_html=True)
-
-        if prob < 0.3:
-
-            st.markdown("""
-            ✅ Maintain healthy diet
-
-            ✅ Continue regular exercise
-
-            ✅ Monitor health annually
-
-            ✅ Maintain healthy BMI
-            """)
-
-        elif prob < 0.6:
-
-            st.markdown("""
-            ⚠ Reduce sugar intake
-
-            ⚠ Increase physical activity
-
-            ⚠ Monitor glucose regularly
-
-            ⚠ Maintain balanced nutrition
-            """)
-
-        else:
-
-            st.markdown("""
-            🚨 Consult a healthcare professional
-
-            🚨 Monitor blood glucose frequently
-
-            🚨 Follow a diabetes-friendly diet
-
-            🚨 Begin lifestyle intervention immediately
-
-            🚨 Seek medical evaluation
-            """)
-
-        # RISK GAUGE
-        st.markdown("### 🎯 Risk Gauge")
-
-        fig = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=risk_percent,
-            title={'text': "Diabetes Risk (%)"},
-            gauge={
-                'axis': {'range': [0, 100]},
-                'bar': {'color': "red"},
-                'steps': [
-                    {'range': [0, 30], 'color': "green"},
-                    {'range': [30, 60], 'color': "orange"},
-                    {'range': [60, 100], 'color': "red"}
-                ]
-            }
-        ))
-
-        fig.update_layout(
-            height=400,
-            paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="white")
-        )
-
-        st.plotly_chart(
-            fig,
+        predict_btn = st.button(
+            "🔍 Analyze Diabetes Risk",
             use_container_width=True
         )
 
+    with right_col:
 
+        st.markdown("### 📊 Assessment Result")
+
+        if predict_btn:
+
+            prediction, probability = predict_diabetes([
+                pregnancies,
+                glucose,
+                bp,
+                skin,
+                insulin,
+                bmi,
+                dpf,
+                age
+            ])
+
+            risk_percent = round(probability * 100, 2)
+
+            metric1, metric2 = st.columns(2)
+
+            with metric1:
+                st.metric(
+                    "Risk Score",
+                    f"{risk_percent}%"
+                )
+
+            with metric2:
+                st.metric(
+                    "Prediction",
+                    "Positive" if prediction == 1 else "Negative"
+                )
+
+            st.markdown("---")
+
+            st.subheader("Risk Probability")
+
+            st.progress(float(probability))
+
+            if probability < 0.3:
+
+                st.success("🟢 Low Risk")
+
+                risk_level = "Low"
+
+            elif probability < 0.6:
+
+                st.warning("🟡 Moderate Risk")
+
+                risk_level = "Moderate"
+
+            else:
+
+                st.error("🔴 High Risk")
+
+                risk_level = "High"
+
+            st.info(
+                f"Risk Level: {risk_level}"
+            )
+
+            st.info(
+                risk_message(probability)
+            )
+
+            fig = go.Figure(
+                go.Indicator(
+                    mode="gauge+number",
+                    value=risk_percent,
+                    title={
+                        "text": "Diabetes Risk (%)"
+                    },
+                    gauge={
+                        "axis": {
+                            "range": [0, 100]
+                        },
+                        "bar": {
+                            "color": "#38bdf8",
+                            "thickness": 0.25
+                        },
+                        "steps": [
+                            {
+                                "range": [0, 30],
+                                "color": "green"
+                            },
+                            {
+                                "range": [30, 60],
+                                "color": "orange"
+                            },
+                            {
+                                "range": [60, 100],
+                                "color": "red"
+                            }
+                        ]
+                    }
+                )
+            )
+
+            fig.update_layout(
+                height=350,
+                paper_bgcolor="rgba(0,0,0,0)",
+                font=dict(color="white")
+            )
+
+            st.plotly_chart(
+                fig,
+                use_container_width=True
+            )
+
+            st.markdown("### 💡 Recommendations")
+
+            if probability < 0.3:
+
+                st.success(
+                    """
+                    • Maintain healthy diet
+
+                    • Exercise regularly
+
+                    • Continue annual health checkups
+                    """
+                )
+
+            elif probability < 0.6:
+
+                st.warning(
+                    """
+                    • Reduce sugar intake
+
+                    • Increase physical activity
+
+                    • Monitor glucose levels
+                    """
+                )
+
+            else:
+
+                st.error(
+                    """
+                    • Consult a healthcare professional
+
+                    • Monitor blood glucose frequently
+
+                    • Follow a diabetes-friendly diet
+
+                    • Seek medical evaluation
+                    """
+                )
+
+        else:
+
+            st.info(
+                "Enter patient details and click Analyze Diabetes Risk."
+            )
+
+# ==================================================
 # HEART DISEASE PAGE
-elif page == "❤️ Heart Disease":
+# ==================================================
 
-    st.markdown("""
-    <h1 style='text-align:center;'>
-    ❤️ Heart Disease Risk Assessment
-    </h1>
-    """, unsafe_allow_html=True)
+elif page == "heart":
 
-    st.markdown("""
-    <div class='glass-card'>
-    Assess cardiovascular disease risk using clinical and cardiac parameters.
-    </div>
-    """, unsafe_allow_html=True)
+    st.title("❤️ Heart Disease Risk Assessment")
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+        """
+        Assess cardiovascular disease risk using
+        patient information and cardiac parameters.
+        """
+    )
 
-    # INPUTS
-    col1, col2, col3 = st.columns(3)
+    left_col, right_col = st.columns([1, 1])
 
-    with col1:
+    with left_col:
 
         st.markdown("### 👤 Patient Information")
 
@@ -679,22 +833,23 @@ elif page == "❤️ Heart Disease":
         sex = st.selectbox(
             "Gender",
             [0, 1],
-            format_func=lambda x: "Female" if x == 0 else "Male"
+            format_func=lambda x: "Female" if x == 0 else "Male",
+            key="heart_gender"
         )
 
         cp = st.selectbox(
             "Chest Pain Type",
-            [0, 1, 2, 3]
+            [0, 1, 2, 3],
+            key="heart_cp"
         )
 
         trestbps = st.number_input(
             "Resting Blood Pressure",
             min_value=80,
             max_value=250,
-            value=120
+            value=120,
+            key="heart_bp"
         )
-
-    with col2:
 
         st.markdown("### ❤️ Cardiac Parameters")
 
@@ -702,251 +857,245 @@ elif page == "❤️ Heart Disease":
             "Cholesterol",
             min_value=100,
             max_value=700,
-            value=200
+            value=200,
+            key="heart_chol"
         )
 
         fbs = st.selectbox(
             "Fasting Blood Sugar > 120",
-            [0, 1]
+            [0, 1],
+            key="heart_fbs"
         )
 
         restecg = st.selectbox(
             "Rest ECG",
-            [0, 1, 2]
+            [0, 1, 2],
+            key="heart_ecg"
         )
 
         thalach = st.number_input(
             "Maximum Heart Rate",
             min_value=60,
             max_value=250,
-            value=150
+            value=150,
+            key="heart_rate"
         )
-
-    with col3:
-
-        st.markdown("### 🧪 Diagnostic Parameters")
 
         exang = st.selectbox(
             "Exercise Induced Angina",
-            [0, 1]
+            [0, 1],
+            key="heart_exang"
         )
 
         oldpeak = st.number_input(
             "ST Depression",
             min_value=0.0,
             max_value=10.0,
-            value=1.0
+            value=1.0,
+            key="heart_oldpeak"
         )
 
         slope = st.selectbox(
             "Slope",
-            [0, 1, 2]
+            [0, 1, 2],
+            key="heart_slope"
         )
 
         ca = st.selectbox(
             "Major Vessels",
-            [0, 1, 2, 3]
+            [0, 1, 2, 3],
+            key="heart_ca"
         )
 
         thal = st.selectbox(
             "Thalassemia",
-            [0, 1, 2, 3]
+            [0, 1, 2, 3],
+            key="heart_thal"
         )
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-
-    # PREDICTION
-    if st.button(
-        "🔍 Analyze Heart Disease Risk",
-        use_container_width=True
-    ):
-
-        pred, prob = predict_heart([
-            age,
-            sex,
-            cp,
-            trestbps,
-            chol,
-            fbs,
-            restecg,
-            thalach,
-            exang,
-            oldpeak,
-            slope,
-            ca,
-            thal
-        ])
-
-        risk_percent = round(prob * 100, 2)
-
-        st.markdown("---")
-
-        # KPI METRICS
-        m1, m2, m3 = st.columns(3)
-
-        with m1:
-            st.metric(
-                "Risk Score",
-                f"{risk_percent}%"
-            )
-
-        with m2:
-            st.metric(
-                "Prediction",
-                "Positive" if pred == 1 else "Negative"
-            )
-
-        with m3:
-
-            if prob < 0.3:
-                level = "Low"
-
-            elif prob < 0.6:
-                level = "Moderate"
-
-            else:
-                level = "High"
-
-            st.metric(
-                "Risk Level",
-                level
-            )
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        # PROGRESS BAR
-        st.markdown("### 📊 Risk Probability")
-
-        st.progress(float(prob))
-
-        st.write(
-            f"Heart Disease Risk Probability: **{risk_percent}%**"
-        )
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        # ALERTS
-        if prob < 0.3:
-
-            st.success(
-                "🟢 Low Cardiovascular Risk"
-            )
-
-        elif prob < 0.6:
-
-            st.warning(
-                "🟡 Moderate Cardiovascular Risk"
-            )
-
-        else:
-
-            st.error(
-                "🔴 High Cardiovascular Risk"
-            )
-
-        st.info(
-            risk_message(prob)
-        )
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        # RECOMMENDATIONS
-        st.markdown("""
-        <div class='glass-card'>
-        <h3>💡 Cardiac Health Recommendations</h3>
-        </div>
-        """, unsafe_allow_html=True)
-
-        if prob < 0.3:
-
-            st.markdown("""
-            ✅ Continue regular physical activity
-
-            ✅ Maintain healthy cholesterol levels
-
-            ✅ Follow a balanced diet
-
-            ✅ Annual health checkups
-            """)
-
-        elif prob < 0.6:
-
-            st.markdown("""
-            ⚠ Reduce saturated fat intake
-
-            ⚠ Monitor blood pressure regularly
-
-            ⚠ Increase aerobic exercise
-
-            ⚠ Improve dietary habits
-            """)
-
-        else:
-
-            st.markdown("""
-            🚨 Consult a cardiologist
-
-            🚨 Monitor cardiovascular health
-
-            🚨 Follow prescribed treatment plans
-
-            🚨 Reduce cardiovascular risk factors
-
-            🚨 Seek medical evaluation immediately
-            """)
-
-        # HEART RISK GAUGE
-        st.markdown("### 🎯 Cardiac Risk Gauge")
-
-        fig = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=risk_percent,
-            title={"text": "Heart Disease Risk (%)"},
-            gauge={
-                "axis": {"range": [0, 100]},
-                "bar": {"color": "red"},
-                "steps": [
-                    {"range": [0, 30], "color": "green"},
-                    {"range": [30, 60], "color": "orange"},
-                    {"range": [60, 100], "color": "red"}
-                ]
-            }
-        ))
-
-        fig.update_layout(
-            height=400,
-            paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="white")
-        )
-
-        st.plotly_chart(
-            fig,
+        predict_btn = st.button(
+            "🔍 Analyze Heart Disease Risk",
             use_container_width=True
         )
 
+    with right_col:
 
+        st.markdown("### 📊 Assessment Result")
+
+        if predict_btn:
+
+            prediction, probability = predict_heart([
+                age,
+                sex,
+                cp,
+                trestbps,
+                chol,
+                fbs,
+                restecg,
+                thalach,
+                exang,
+                oldpeak,
+                slope,
+                ca,
+                thal
+            ])
+
+            risk_percent = round(probability * 100, 2)
+
+            metric1, metric2 = st.columns(2)
+
+            with metric1:
+                st.metric(
+                    "Risk Score",
+                    f"{risk_percent}%"
+                )
+
+            with metric2:
+                st.metric(
+                    "Prediction",
+                    "Positive" if prediction == 1 else "Negative"
+                )
+
+            st.markdown("---")
+
+            st.subheader("Risk Probability")
+
+            st.progress(float(probability))
+
+            if probability < 0.3:
+
+                st.success("🟢 Low Risk")
+
+                risk_level = "Low"
+
+            elif probability < 0.6:
+
+                st.warning("🟡 Moderate Risk")
+
+                risk_level = "Moderate"
+
+            else:
+
+                st.error("🔴 High Risk")
+
+                risk_level = "High"
+
+            st.info(
+                f"Risk Level: {risk_level}"
+            )
+
+            st.info(
+                risk_message(probability)
+            )
+
+            fig = go.Figure(
+                go.Indicator(
+                    mode="gauge+number",
+                    value=risk_percent,
+                    title={
+                        "text": "Heart Disease Risk (%)"
+                    },
+                    gauge={
+                        "axis": {
+                            "range": [0, 100]
+                        },
+                        "bar": {
+                            "color": "#38bdf8",
+                            "thickness": 0.25
+                        },
+                        "steps": [
+                            {
+                                "range": [0, 30],
+                                "color": "green"
+                            },
+                            {
+                                "range": [30, 60],
+                                "color": "orange"
+                            },
+                            {
+                                "range": [60, 100],
+                                "color": "red"
+                            }
+                        ]
+                    }
+                )
+            )
+
+            fig.update_layout(
+                height=350,
+                paper_bgcolor="rgba(0,0,0,0)",
+                font=dict(color="white")
+            )
+
+            st.plotly_chart(
+                fig,
+                use_container_width=True
+            )
+
+            st.markdown("### 💡 Recommendations")
+
+            if probability < 0.3:
+
+                st.success(
+                    """
+                    • Maintain healthy cholesterol levels
+
+                    • Exercise regularly
+
+                    • Continue annual health checkups
+                    """
+                )
+
+            elif probability < 0.6:
+
+                st.warning(
+                    """
+                    • Monitor blood pressure regularly
+
+                    • Reduce saturated fats
+
+                    • Increase physical activity
+                    """
+                )
+
+            else:
+
+                st.error(
+                    """
+                    • Consult a cardiologist
+
+                    • Monitor cardiovascular health
+
+                    • Follow medical advice
+
+                    • Seek immediate evaluation
+                    """
+                )
+
+        else:
+
+            st.info(
+                "Enter patient details and click Analyze Heart Disease Risk."
+            )
+
+# ==================================================
 # LIVER DISEASE PAGE
-elif page == "🫀 Liver Disease":
+# ==================================================
 
-    st.markdown("""
-    <h1 style='text-align:center;'>
-    🫀 Liver Disease Risk Assessment
-    </h1>
-    """, unsafe_allow_html=True)
+elif page == "liver":
 
-    st.markdown("""
-    <div class='glass-card'>
-    Assess liver disease risk using biochemical and diagnostic health parameters.
-    </div>
-    """, unsafe_allow_html=True)
+    st.title("🫀 Liver Disease Risk Assessment")
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+        """
+        Assess liver disease risk using
+        patient information and liver function parameters.
+        """
+    )
 
-    # INPUT SECTION
-    col1, col2 = st.columns(2)
+    left_col, right_col = st.columns([1, 1])
 
-    with col1:
+    with left_col:
 
         st.markdown("### 👤 Patient Information")
 
@@ -961,474 +1110,537 @@ elif page == "🫀 Liver Disease":
         gender = st.selectbox(
             "Gender",
             [1, 0],
-            format_func=lambda x: "Male" if x == 1 else "Female"
+            format_func=lambda x: "Male" if x == 1 else "Female",
+            key="liver_gender"
         )
+
+        st.markdown("### 🧪 Liver Function Parameters")
 
         tb = st.number_input(
             "Total Bilirubin",
             min_value=0.0,
             max_value=30.0,
-            value=1.0
+            value=1.0,
+            key="liver_tb"
         )
 
         db = st.number_input(
             "Direct Bilirubin",
             min_value=0.0,
             max_value=10.0,
-            value=0.3
+            value=0.3,
+            key="liver_db"
         )
 
         alkphos = st.number_input(
             "Alkaline Phosphotase",
             min_value=50,
             max_value=3000,
-            value=200
+            value=200,
+            key="liver_alk"
         )
-
-    with col2:
-
-        st.markdown("### 🧪 Liver Function Parameters")
 
         sgpt = st.number_input(
             "SGPT",
             min_value=0,
             max_value=2000,
-            value=30
+            value=30,
+            key="liver_sgpt"
         )
 
         sgot = st.number_input(
             "SGOT",
             min_value=0,
             max_value=2000,
-            value=35
+            value=35,
+            key="liver_sgot"
         )
 
         tp = st.number_input(
             "Total Proteins",
             min_value=2.0,
             max_value=10.0,
-            value=6.5
+            value=6.5,
+            key="liver_tp"
         )
 
         alb = st.number_input(
             "Albumin",
             min_value=1.0,
             max_value=6.0,
-            value=3.5
+            value=3.5,
+            key="liver_alb"
         )
 
         agr = st.number_input(
             "Albumin / Globulin Ratio",
             min_value=0.1,
             max_value=3.0,
-            value=1.0
+            value=1.0,
+            key="liver_agr"
         )
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # PREDICTION BUTTON
-    if st.button(
-        "🔍 Analyze Liver Disease Risk",
-        use_container_width=True
-    ):
-
-        pred, prob = predict_liver([
-            age,
-            gender,
-            tb,
-            db,
-            alkphos,
-            sgpt,
-            sgot,
-            tp,
-            alb,
-            agr
-        ])
-
-        risk_percent = round(prob * 100, 2)
-
-        st.markdown("---")
-
-        # KPI CARDS
-        k1, k2, k3 = st.columns(3)
-
-        with k1:
-            st.metric(
-                "Risk Score",
-                f"{risk_percent}%"
-            )
-
-        with k2:
-            st.metric(
-                "Prediction",
-                "Positive" if pred == 1 else "Negative"
-            )
-
-        with k3:
-
-            if prob < 0.3:
-                level = "Low"
-
-            elif prob < 0.6:
-                level = "Moderate"
-
-            else:
-                level = "High"
-
-            st.metric(
-                "Risk Level",
-                level
-            )
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        # PROGRESS BAR
-        st.markdown("### 📊 Risk Probability")
-
-        st.progress(float(prob))
-
-        st.write(
-            f"Liver Disease Risk Probability: **{risk_percent}%**"
-        )
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        # ALERTS
-        if prob < 0.3:
-
-            st.success(
-                "🟢 Low Liver Disease Risk"
-            )
-
-        elif prob < 0.6:
-
-            st.warning(
-                "🟡 Moderate Liver Disease Risk"
-            )
-
-        else:
-
-            st.error(
-                "🔴 High Liver Disease Risk"
-            )
-
-        st.info(
-            risk_message(prob)
-        )
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        # RECOMMENDATIONS
-        st.markdown("""
-        <div class='glass-card'>
-        <h3>💡 Liver Health Recommendations</h3>
-        </div>
-        """, unsafe_allow_html=True)
-
-        if prob < 0.3:
-
-            st.markdown("""
-            ✅ Maintain healthy eating habits
-
-            ✅ Stay hydrated
-
-            ✅ Exercise regularly
-
-            ✅ Periodic health monitoring
-            """)
-
-        elif prob < 0.6:
-
-            st.markdown("""
-            ⚠ Reduce processed foods
-
-            ⚠ Monitor liver function regularly
-
-            ⚠ Limit unhealthy dietary habits
-
-            ⚠ Improve overall lifestyle
-            """)
-
-        else:
-
-            st.markdown("""
-            🚨 Consult a hepatologist immediately
-
-            🚨 Monitor liver enzymes regularly
-
-            🚨 Follow medical guidance
-
-            🚨 Avoid liver stress factors
-
-            🚨 Seek professional evaluation
-            """)
-
-        # LIVER RISK GAUGE
-        st.markdown("### 🎯 Liver Risk Gauge")
-
-        fig = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=risk_percent,
-            title={"text": "Liver Disease Risk (%)"},
-            gauge={
-                "axis": {"range": [0, 100]},
-                "bar": {"color": "red"},
-                "steps": [
-                    {"range": [0, 30], "color": "green"},
-                    {"range": [30, 60], "color": "orange"},
-                    {"range": [60, 100], "color": "red"}
-                ]
-            }
-        ))
-
-        fig.update_layout(
-            height=400,
-            paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="white")
-        )
-
-        st.plotly_chart(
-            fig,
+        predict_btn = st.button(
+            "🔍 Analyze Liver Disease Risk",
             use_container_width=True
         )
 
+    with right_col:
 
+        st.markdown("### 📊 Assessment Result")
+
+        if predict_btn:
+
+            prediction, probability = predict_liver([
+                age,
+                gender,
+                tb,
+                db,
+                alkphos,
+                sgpt,
+                sgot,
+                tp,
+                alb,
+                agr
+            ])
+
+            risk_percent = round(probability * 100, 2)
+
+            metric1, metric2 = st.columns(2)
+
+            with metric1:
+                st.metric(
+                    "Risk Score",
+                    f"{risk_percent}%"
+                )
+
+            with metric2:
+                st.metric(
+                    "Prediction",
+                    "Positive" if prediction == 1 else "Negative"
+                )
+
+            st.markdown("---")
+
+            st.subheader("Risk Probability")
+
+            st.progress(float(probability))
+
+            if probability < 0.3:
+
+                st.success("🟢 Low Risk")
+
+                risk_level = "Low"
+
+            elif probability < 0.6:
+
+                st.warning("🟡 Moderate Risk")
+
+                risk_level = "Moderate"
+
+            else:
+
+                st.error("🔴 High Risk")
+
+                risk_level = "High"
+
+            st.info(
+                f"Risk Level: {risk_level}"
+            )
+
+            st.info(
+                risk_message(probability)
+            )
+
+            fig = go.Figure(
+                go.Indicator(
+                    mode="gauge+number",
+                    value=risk_percent,
+                    title={
+                        "text": "Liver Disease Risk (%)"
+                    },
+                    gauge={
+                        "axis": {
+                            "range": [0, 100]
+                        },
+                        "bar": {
+                            "color": "#38bdf8",
+                            "thickness": 0.25
+                        },
+                        "steps": [
+                            {
+                                "range": [0, 30],
+                                "color": "green"
+                            },
+                            {
+                                "range": [30, 60],
+                                "color": "orange"
+                            },
+                            {
+                                "range": [60, 100],
+                                "color": "red"
+                            }
+                        ]
+                    }
+                )
+            )
+
+            fig.update_layout(
+                height=350,
+                paper_bgcolor="rgba(0,0,0,0)",
+                font=dict(color="white")
+            )
+
+            st.plotly_chart(
+                fig,
+                use_container_width=True
+            )
+
+            st.markdown("### 💡 Recommendations")
+
+            if probability < 0.3:
+
+                st.success(
+                    """
+                    • Maintain a healthy diet
+
+                    • Stay physically active
+
+                    • Continue routine health checkups
+                    """
+                )
+
+            elif probability < 0.6:
+
+                st.warning(
+                    """
+                    • Reduce processed foods
+
+                    • Monitor liver health regularly
+
+                    • Improve lifestyle habits
+                    """
+                )
+
+            else:
+
+                st.error(
+                    """
+                    • Consult a liver specialist
+
+                    • Monitor liver function tests
+
+                    • Follow medical advice
+
+                    • Seek professional evaluation
+                    """
+                )
+
+        else:
+
+            st.info(
+                "Enter patient details and click Analyze Liver Disease Risk."
+            )
+
+# ==================================================
 # ABOUT PAGE
-elif page == "ℹ️ About":
+# ==================================================
 
-    st.markdown("""
-    <h1 style='text-align:center;'>
-    ℹ️ About HealthGuard AI
-    </h1>
-    """, unsafe_allow_html=True)
+elif page == "about":
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.title("ℹ️ About HealthGuard AI")
 
-    # PROJECT OVERVIEW
-    st.markdown("""
-    <div class='glass-card'>
-
-    <h2>🏥 Project Overview</h2>
-
-    HealthGuard AI is an intelligent healthcare
-    decision-support system that leverages
-    Machine Learning models to assess the risk
-    of multiple diseases based on patient
-    clinical and diagnostic parameters.
-
-    The platform enables users to perform
-    quick health risk assessments and receive
-    instant probability-based predictions.
-
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # DISEASE MODULES
-    st.markdown("## 🩺 Supported Disease Modules")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-
-        st.markdown("""
-        <div class='disease-card'>
-
-        <h3>🩸 Diabetes</h3>
-
-        Predicts diabetes risk using:
-
-        • Glucose
-
-        • BMI
-
-        • Insulin
-
-        • Blood Pressure
-
-        • Age
-
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col2:
-
-        st.markdown("""
-        <div class='disease-card'>
-
-        <h3>❤️ Heart Disease</h3>
-
-        Predicts cardiovascular risk using:
-
-        • Cholesterol
-
-        • ECG Results
-
-        • Heart Rate
-
-        • Chest Pain Type
-
-        • Blood Pressure
-
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col3:
-
-        st.markdown("""
-        <div class='disease-card'>
-
-        <h3>🫀 Liver Disease</h3>
-
-        Predicts liver disease risk using:
-
-        • Bilirubin
-
-        • SGOT
-
-        • SGPT
-
-        • Albumin
-
-        • Protein Levels
-
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # MACHINE LEARNING
-    st.markdown("""
-    <div class='glass-card'>
-
-    <h2>🤖 Machine Learning Models</h2>
-
-    This project utilizes Random Forest
-    Classification models trained on
-    healthcare datasets.
-
-    Why Random Forest?
-
-    ✔ High Accuracy
-
-    ✔ Handles Non-Linear Relationships
-
-    ✔ Robust Against Overfitting
-
-    ✔ Works Well With Medical Data
-
-    ✔ Probability-Based Predictions
-
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-
-    # TECHNOLOGY STACK
-    st.markdown("""
-    <div class='glass-card'>
-
-    <h2>⚙️ Technology Stack</h2>
-
-    🐍 Python
-
-    🎨 Streamlit
-
-    📊 Pandas
-
-    🔢 NumPy
-
-    🤖 Scikit-Learn
-
-    📈 Plotly
-
-    💾 Joblib
-
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # SYSTEM WORKFLOW
-    st.markdown("""
-    <div class='glass-card'>
-
-    <h2>🔄 System Workflow</h2>
-
-    User Inputs
-
-    ⬇
-
-    Data Processing
-
-    ⬇
-
-    Random Forest Model
-
-    ⬇
-
-    Risk Probability Calculation
-
-    ⬇
-
-    Risk Classification
-
-    ⬇
-
-    Health Recommendations
-
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # PROJECT HIGHLIGHTS
-    st.markdown("""
-    <div class='glass-card'>
-
-    <h2>🚀 Key Highlights</h2>
-
-    ✅ Multi-Disease Prediction Platform
-
-    ✅ Probability-Based Risk Assessment
-
-    ✅ Interactive Modern Dashboard
-
-    ✅ Machine Learning Integration
-
-    ✅ Healthcare Decision Support
-
-    ✅ Real-Time Prediction Engine
-
-    ✅ Recruiter-Friendly Project Design
-
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # DISCLAIMER
-    st.warning(
+    st.markdown(
         """
-        ⚠️ Disclaimer:
-        This application is intended for educational
-        and decision-support purposes only.
-        It should not replace professional medical
-        diagnosis or treatment.
+        HealthGuard AI is an AI-powered healthcare
+        decision support platform designed to assess
+        disease risk using Machine Learning models.
         """
     )
 
+    st.markdown("---")
+
+    # ==========================================
+    # PROJECT OVERVIEW
+    # ==========================================
+
+    st.markdown(
+        """
+        <div class='glass-card'>
+
+        <h2>🏥 Project Overview</h2>
+
+        HealthGuard AI is a multi-disease prediction
+        platform that helps users assess the likelihood
+        of various health conditions using predictive
+        Machine Learning models.
+
+        The platform currently supports:
+
+        • Diabetes Risk Prediction
+
+        • Heart Disease Risk Prediction
+
+        • Liver Disease Risk Prediction
+
+        • Probability-Based Risk Assessment
+
+        • Personalized Recommendations
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # ==========================================
+    # TECHNOLOGY STACK
+    # ==========================================
+
+    st.subheader("⚙️ Technology Stack")
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric(
+            "Language",
+            "Python"
+        )
+
+    with col2:
+        st.metric(
+            "Frontend",
+            "Streamlit"
+        )
+
+    with col3:
+        st.metric(
+            "ML Library",
+            "Scikit-Learn"
+        )
+
+    with col4:
+        st.metric(
+            "Visualization",
+            "Plotly"
+        )
+
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # FOOTER
-    st.markdown("""
-    <div style='text-align:center;'>
+    # ==========================================
+    # DISEASE MODULES
+    # ==========================================
 
-    Developed using Machine Learning & Streamlit
+    st.subheader("🩺 Supported Disease Modules")
 
-    HealthGuard AI © 2026
+    d1, d2, d3 = st.columns(3)
 
-    </div>
-    """, unsafe_allow_html=True)
+    with d1:
+
+        st.markdown(
+            """
+            <div class='disease-card'>
+
+            <h2>Diabetes</h2>
+
+            Uses:
+
+            • Glucose
+
+            • BMI
+
+            • Insulin
+
+            • Blood Pressure
+
+            • Age
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with d2:
+
+        st.markdown(
+            """
+            <div class='disease-card'>
+
+            <h2>Heart Disease</h2>
+
+            Uses:
+
+            • Cholesterol
+
+            • ECG Results
+
+            • Heart Rate
+
+            • Chest Pain
+
+            • Blood Pressure
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with d3:
+
+        st.markdown(
+            """
+            <div class='disease-card'>
+
+            <h2>Liver Disease</h2>
+
+            Uses:
+
+            • Bilirubin
+
+            • SGPT
+
+            • SGOT
+
+            • Albumin
+
+            • Protein Levels
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ==========================================
+    # MODEL DETAILS
+    # ==========================================
+
+    st.markdown(
+        """
+        <div class='glass-card'>
+
+        <h2>🤖 Machine Learning Models</h2>
+
+        Random Forest Classifier was selected
+        because it provides:
+
+        ✔ High Prediction Accuracy
+
+        ✔ Better Generalization
+
+        ✔ Reduced Overfitting
+
+        ✔ Probability-Based Outputs
+
+        ✔ Robust Performance on Medical Data
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # ==========================================
+    # PROJECT WORKFLOW
+    # ==========================================
+
+    st.markdown(
+        """
+        <div class='glass-card'>
+
+        <h2>⚙️ System Workflow</h2>
+
+        User Inputs
+
+        ↓
+
+        Data Processing
+
+        ↓
+
+        Random Forest Model
+
+        ↓
+
+        Probability Calculation
+
+        ↓
+
+        Risk Classification
+
+        ↓
+
+        Health Recommendations
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # ==========================================
+    # FEATURES
+    # ==========================================
+
+    st.markdown(
+        """
+        <div class='glass-card'>
+
+        <h2>✨ Key Features</h2>
+
+        ✅ Multi-Disease Prediction
+
+        ✅ Interactive Dashboard
+
+        ✅ Risk Probability Analysis
+
+        ✅ AI-Powered Recommendations
+
+        ✅ Real-Time Predictions
+
+        ✅ Modern User Interface
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # ==========================================
+    # PROJECT STATS
+    # ==========================================
+
+    st.subheader("📊 Project Statistics")
+
+    s1, s2, s3, s4 = st.columns(4)
+
+    with s1:
+        st.metric(
+            "Diseases",
+            "3"
+        )
+
+    with s2:
+        st.metric(
+            "Models",
+            "3"
+        )
+
+    with s3:
+        st.metric(
+            "Features",
+            "30+"
+        )
+
+    with s4:
+        st.metric(
+            "Predictions",
+            "Instant"
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    st.success(
+        "🚀 HealthGuard AI combines Machine Learning and Healthcare Analytics to provide intelligent disease risk assessment."
+    )
+
+    st.warning(
+        "⚠️ This application is intended for educational purposes only and should not replace professional medical diagnosis."
+    )
